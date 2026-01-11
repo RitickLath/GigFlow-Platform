@@ -1,8 +1,10 @@
 import express, { type Application } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 import { connectDB, disconnectDB } from "./config/server.config.js";
 import routes from "./routes/index.js";
+import { errorHandler } from "./middlewares/error.middleware.js";
 
 dotenv.config();
 
@@ -10,13 +12,22 @@ const app: Application = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    credentials: true,
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+  })
+);
+app.use(cookieParser());
 
 app.get("/health", (req, res) => {
   res.status(200).json({ success: true, message: "Server is healthy" });
 });
 
 app.use("/api/v1", routes);
+
+// Global Error handler (Custom, DB, Unhandled)
+app.use(errorHandler);
 
 let server: ReturnType<typeof app.listen>;
 
