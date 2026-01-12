@@ -1,5 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { authService } from "../services/auth.service.js";
+import { validateRegister, validateLogin } from "../utils/validation.util.js";
+import { BadRequestError } from "../utils/error.util.js";
 
 export const register = async (
   req: Request,
@@ -7,9 +9,18 @@ export const register = async (
   next: NextFunction
 ) => {
   try {
-    const { user, token } = await authService.register(req.body);
+    // 1. Validate and sanitize input
+    const validation = validateRegister(req.body);
+    if (!validation.success) {
+      throw new BadRequestError(
+        validation.error.issues[0]?.message || "Invalid input"
+      );
+    }
 
-    // Set HttpOnly cookie
+    // 2. Call service with validated data
+    const { user, token } = await authService.register(validation.data);
+
+    // 3. Set HttpOnly cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -33,9 +44,18 @@ export const login = async (
   next: NextFunction
 ) => {
   try {
-    const { user, token } = await authService.login(req.body);
+    // 1. Validate and sanitize input
+    const validation = validateLogin(req.body);
+    if (!validation.success) {
+      throw new BadRequestError(
+        validation.error.issues[0]?.message || "Invalid input"
+      );
+    }
 
-    // Set HttpOnly cookie
+    // 2. Call service with validated data
+    const { user, token } = await authService.login(validation.data);
+
+    // 3. Set HttpOnly cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -84,8 +104,7 @@ export const getMe = async (
 ) => {
   try {
     // Will get userId from auth middleware (req.user)
-    // Will decide the profile view later
-    // TODO
+    // TODO: Implement after auth middleware
     res.status(200).json({
       success: true,
       message: "Get current user endpoint",
