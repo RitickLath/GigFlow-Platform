@@ -103,12 +103,26 @@ export const getMe = async (
   next: NextFunction
 ) => {
   try {
-    // Will get userId from auth middleware (req.user)
-    // TODO: Implement after auth middleware
+    const userId = req.userId;
+
+    if (!userId) {
+      throw new BadRequestError("User not authenticated");
+    }
+
+    const user = await authService.getUserById(userId);
+
+    if (!user) {
+      throw new BadRequestError("User not found");
+    }
+
     res.status(200).json({
       success: true,
-      message: "Get current user endpoint",
-      data: {},
+      message: "User fetched successfully",
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
     });
   } catch (error) {
     next(error);

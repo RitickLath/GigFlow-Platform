@@ -49,7 +49,7 @@ export const getMyGigs = async (
   next: NextFunction
 ) => {
   try {
-    const userId = (req as any).userId;
+    const userId = req.userId;
 
     if (!userId) {
       throw new BadRequestError("User not authenticated");
@@ -100,7 +100,7 @@ export const createGig = async (
   next: NextFunction
 ) => {
   try {
-    const userId = (req as any).userId;
+    const userId = req.userId;
 
     if (!userId) {
       throw new BadRequestError("User not authenticated");
@@ -138,7 +138,7 @@ export const deleteGig = async (
 ) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).userId;
+    const userId = req.userId;
 
     // Validate ID
     if (!id || typeof id !== "string" || !mongoose.isValidObjectId(id)) {

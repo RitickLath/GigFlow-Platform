@@ -35,6 +35,19 @@ const gigQuerySchema = z.object({
   status: z.enum(["open", "assigned"]).optional(),
 });
 
+// Bid Schemas
+const createBidSchema = z.object({
+  gigId: z.string().min(1, "Gig ID is required"),
+  message: z
+    .string()
+    .min(10, "Message must be at least 10 characters")
+    .max(1000, "Message cannot exceed 1000 characters"),
+  price: z
+    .number()
+    .positive("Price must be a positive number")
+    .min(1, "Price must be at least 1"),
+});
+
 // Auth Validators
 export const validateRegister = (data: unknown) => {
   return registerSchema.safeParse(data);
@@ -51,4 +64,9 @@ export const validateCreateGig = (data: unknown) => {
 
 export const validateGigQuery = (data: unknown) => {
   return gigQuerySchema.safeParse(data);
+};
+
+// Bid Validators
+export const validateCreateBid = (data: unknown) => {
+  return createBidSchema.safeParse(data);
 };

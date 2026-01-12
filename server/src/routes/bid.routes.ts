@@ -5,12 +5,13 @@ import {
   hireBid,
   getMyBids,
 } from "../controllers/bid.controller.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.post("/", createBid);
-router.get("/my", getMyBids);
-router.get("/:gigId", getBidsByGig);
-router.patch("/:bidId/hire", hireBid);
+router.post("/", authMiddleware, createBid);
+router.get("/my", authMiddleware, getMyBids);
+router.get("/:gigId", authMiddleware, getBidsByGig);
+router.patch("/:bidId/hire", authMiddleware, hireBid);
 
 export default router;

@@ -6,13 +6,16 @@ import {
   getMyGigs,
   deleteGig,
 } from "../controllers/gig.controller.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
 router.get("/", getAllGigs);
-router.get("/my", getMyGigs);
 router.get("/:id", getGigById);
-router.post("/", createGig);
-router.delete("/:id", deleteGig);
+
+// Protected routes
+router.get("/my", authMiddleware, getMyGigs);
+router.post("/", authMiddleware, createGig);
+router.delete("/:id", authMiddleware, deleteGig);
 
 export default router;
