@@ -23,7 +23,7 @@ class GigService {
     filter.status = status || "open";
 
     // Search by title (text search)
-    if (search && search.length > 3) {
+    if (search && search.length > 2) {
       filter.$text = { $search: search };
     }
 
