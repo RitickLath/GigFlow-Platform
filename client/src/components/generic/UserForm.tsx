@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useAuth } from "../../hooks/useAuth";
 
 interface UserFormProps {
@@ -34,16 +35,21 @@ const UserForm = ({ mode }: UserFormProps) => {
     try {
       if (isRegister) {
         await register(name, email, password);
+        toast.success("Account created successfully!");
       } else {
         await login(email, password);
+        toast.success("Welcome back!");
       }
 
       const from =
         (location.state as { from?: Location })?.from?.pathname || "/dashboard";
 
       navigate(from, { replace: true });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      const errorMsg = error.response?.data?.message || "Something went wrong";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
