@@ -20,11 +20,11 @@ export const register = async (
     // 2. Call service with validated data
     const { user, token } = await authService.register(validation.data);
 
-    // 3. Set HttpOnly cookie
+    // 3. Set HttpOnly cookie (sameSite: none required for cross-origin)
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: true,
+      sameSite: "none",
       maxAge: 8 * 60 * 60 * 1000,
     });
 
@@ -55,11 +55,11 @@ export const login = async (
     // 2. Call service with validated data
     const { user, token } = await authService.login(validation.data);
 
-    // 3. Set HttpOnly cookie
+    // 3. Set HttpOnly cookie (sameSite: none required for cross-origin)
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: true,
+      sameSite: "none",
       maxAge: 8 * 60 * 60 * 1000,
     });
 
@@ -82,8 +82,8 @@ export const logout = async (
     // Clear the cookie
     res.cookie("token", "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: true,
+      sameSite: "none",
       expires: new Date(0),
     });
 
