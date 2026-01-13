@@ -10,12 +10,15 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
+// Public routes
 router.get("/", getAllGigs);
-router.get("/:id", getGigById);
 
-// Protected routes
+// Protected routes (order matters: /my must come before /:id)
 router.get("/my", authMiddleware, getMyGigs);
 router.post("/", authMiddleware, createGig);
 router.delete("/:id", authMiddleware, deleteGig);
+
+// Dynamic route last (catches all other IDs)
+router.get("/:id", getGigById);
 
 export default router;

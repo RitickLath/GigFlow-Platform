@@ -20,7 +20,7 @@ export const register = async (
     // 2. Call service with validated data
     const { user, token } = await authService.register(validation.data);
 
-    // 3. Set HttpOnly cookie (sameSite: none required for cross-origin)
+    // 3. Set HttpOnly cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: true,
