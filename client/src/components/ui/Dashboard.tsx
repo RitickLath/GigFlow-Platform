@@ -1,23 +1,9 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
-import api from "../../api/axios";
 import { useAuth } from "../../hooks/useAuth";
-import type { Gig } from "../generic/GigCard";
-
-interface Bid {
-  _id: string;
-  gigId: {
-    _id: string;
-    title: string;
-    budget: number;
-    status: "open" | "assigned";
-  };
-  message: string;
-  price: number;
-  status: "pending" | "hired" | "rejected";
-  createdAt: string;
-}
+import { useMyGigs, useDeleteGig } from "../../hooks/useGigs";
+import { useMyBids } from "../../hooks/useBids";
+import type { Gig, Bid, BidGig } from "../../services/types";
+import { useState } from "react";
 
 type TabType = "my-gigs" | "my-bids";
 
@@ -25,60 +11,19 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("my-gigs");
 
-  // My Gigs State
-  const [myGigs, setMyGigs] = useState<Gig[]>([]);
-  const [gigsLoading, setGigsLoading] = useState(true);
+  // Queries
+  const { data: gigsData, isLoading: gigsLoading } = useMyGigs();
+  const { data: bidsData, isLoading: bidsLoading } = useMyBids();
 
-  // My Bids State
-  const [myBids, setMyBids] = useState<Bid[]>([]);
-  const [bidsLoading, setBidsLoading] = useState(true);
+  // Mutations
+  const deleteGigMutation = useDeleteGig();
 
-  const fetchMyGigs = async () => {
-    try {
-      setGigsLoading(true);
-      const response = await api.get("/gigs/my");
-      if (response.data.success) {
-        setMyGigs(response.data.data);
-      }
-    } catch (err) {
-      console.error("Error fetching my gigs:", err);
-    } finally {
-      setGigsLoading(false);
-    }
-  };
+  const myGigs = (gigsData?.data || []) as Gig[];
+  const myBids = (bidsData?.data || []) as Bid[];
 
-  const fetchMyBids = async () => {
-    try {
-      setBidsLoading(true);
-      const response = await api.get("/bids/my");
-      if (response.data.success) {
-        setMyBids(response.data.data);
-      }
-    } catch (err) {
-      console.error("Error fetching my bids:", err);
-    } finally {
-      setBidsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMyGigs();
-    fetchMyBids();
-  }, []);
-
-  const handleDeleteGig = async (gigId: string) => {
+  const handleDeleteGig = (gigId: string) => {
     if (!confirm("Are you sure you want to delete this gig?")) return;
-
-    try {
-      const response = await api.delete(`/gigs/${gigId}`);
-      if (response.data.success) {
-        toast.success("Gig deleted successfully");
-        fetchMyGigs();
-      }
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      toast.error(error.response?.data?.message || "Failed to delete gig");
-    }
+    deleteGigMutation.mutate(gigId);
   };
 
   const formatDate = (dateString: string) => {
@@ -276,7 +221,8 @@ const Dashboard = () => {
                         {gig.status === "open" && (
                           <button
                             onClick={() => handleDeleteGig(gig._id)}
-                            className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors"
+                            disabled={deleteGigMutation.isPending}
+                            className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors disabled:opacity-50"
                           >
                             Delete
                           </button>
@@ -328,62 +274,65 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {myBids.map((bid) => (
-                    <div
-                      key={bid._id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-gray-50 rounded-xl"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Link
-                            to={`/gigs/${bid.gigId._id}`}
-                            className="font-semibold text-gray-900 hover:text-emerald-600 transition-colors"
-                          >
-                            {bid.gigId.title}
-                          </Link>
-                          <span
-                            className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                              bid.status === "hired"
-                                ? "bg-emerald-100 text-emerald-700"
-                                : bid.status === "rejected"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-yellow-100 text-yellow-700"
-                            }`}
-                          >
-                            {bid.status}
-                          </span>
-                        </div>
-                        <p className="text-gray-500 text-sm mb-2">
-                          Your bid: {formatBudget(bid.price)} • Submitted{" "}
-                          {formatDate(bid.createdAt)}
-                        </p>
-                        <p className="text-gray-600 text-sm line-clamp-1">
-                          {bid.message}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p className="text-xs text-gray-400">Gig Budget</p>
-                          <p className="font-semibold text-gray-900">
-                            {formatBudget(bid.gigId.budget)}
+                  {myBids.map((bid) => {
+                    const gigInfo = bid.gigId as BidGig;
+                    return (
+                      <div
+                        key={bid._id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-gray-50 rounded-xl"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Link
+                              to={`/gigs/${gigInfo._id}`}
+                              className="font-semibold text-gray-900 hover:text-emerald-600 transition-colors"
+                            >
+                              {gigInfo.title}
+                            </Link>
+                            <span
+                              className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                                bid.status === "hired"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : bid.status === "rejected"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-yellow-100 text-yellow-700"
+                              }`}
+                            >
+                              {bid.status}
+                            </span>
+                          </div>
+                          <p className="text-gray-500 text-sm mb-2">
+                            Your bid: {formatBudget(bid.price)} • Submitted{" "}
+                            {formatDate(bid.createdAt)}
+                          </p>
+                          <p className="text-gray-600 text-sm line-clamp-1">
+                            {bid.message}
                           </p>
                         </div>
-                        <Link
-                          to={`/gigs/${bid.gigId._id}`}
-                          className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-white border border-gray-200 rounded-lg transition-colors"
-                        >
-                          View Gig
-                        </Link>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <p className="text-xs text-gray-400">Gig Budget</p>
+                            <p className="font-semibold text-gray-900">
+                              {formatBudget(gigInfo.budget)}
+                            </p>
+                          </div>
+                          <Link
+                            to={`/gigs/${gigInfo._id}`}
+                            className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-white border border-gray-200 rounded-lg transition-colors"
+                          >
+                            View Gig
+                          </Link>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* Recent Activity Summary */}
+        {/* Quick Stats */}
         <div className="mt-8 bg-white rounded-2xl border border-gray-100 p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Stats</h2>
           <div className="grid sm:grid-cols-2 gap-4">
